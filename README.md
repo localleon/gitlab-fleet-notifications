@@ -1,110 +1,63 @@
 # gitlab-fleet-webhook-operator
-// TODO(user): Add simple overview of use/purpose
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
-
-
-```
-$ k label -n fleet-local gitrepo sample-simple gitlab.com/repo-name=approval-rule-testing
-gitrepo.fleet.cattle.io/sample-simple labeled
-
-~ ⌚ 10:23:43 ⎈ aks-dev0
-$ k label -n fleet-local gitrepo sample-simple gitlab.com/environment=staging
-gitrepo.fleet.cattle.io/sample-simple labeled
-```
+The `gitlab-fleet-webhook-operator` is a Kubernetes controller that integrates GitLab with Rancher Fleet. It automates the creation and management of GitLab environments and deployments based on the state of `GitRepo` custom resources in your Kubernetes cluster.
 
 ## Getting Started
 
 ### Prerequisites
-- go version v1.22.0+
+- go version v1.23.0+
 - docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- kubectl version v1.27+.
+- Access to a Kubernetes v1.27+ cluster.
+
+### Required Environment Variables
+The controller requires the following environment variables to be set:
+
+- `GITLAB_TOKEN`: The personal access token for authenticating with the GitLab API.
+- `GITLAB_URL`: The base URL of your GitLab instance (e.g., `https://git.mydomain.com/api/v4`).
+
+### Required Labels for GitRepo Objects
+The `GitRepoReconciler` requires the following labels to be set on `GitRepo` objects:
+
+- `gitlab.com/repo-name`: The name of the GitLab repository.
+- `gitlab.com/environment`: The name of the environment to be managed in GitLab.
+- `gitlab.com/environment-url`: The URL of the environment.
+
+Example:
+
+```sh
+kubectl label -n fleet-local gitrepo sample-simple gitlab.com/repo-name=approval-rule-testing
+kubectl label -n fleet-local gitrepo sample-simple gitlab.com/environment=staging
+kubectl label -n fleet-local gitrepo sample-simple gitlab.com/environment-url=http://staging.example.com
+```
+
+The controller will then automatically create an environment and deployments within the Gitlab repository.
 
 ### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+**Build and your image**
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/gitlab-fleet-webhook-operator:tag
+docker build . -t gitlab-fleet-webhook-operator:local
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
-
-**Install the CRDs into the cluster:**
-
-```sh
-make install
-```
+**NOTE:** This image ought to be published by Github Actions to the ghcr.io container registryAnd it is required to have access to pull the image from the working environment.
 
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
-make deploy IMG=<some-registry>/gitlab-fleet-webhook-operator:tag
+$ kubectl apply -f ./config/manager --dry-run=client
+role.rbac.authorization.k8s.io/gitlab-fleet-leader-election-role created (dry run)
+rolebinding.rbac.authorization.k8s.io/gitlab-fleet-leader-election-rolebinding created (dry run)
+deployment.apps/gitlab-fleet-controller-manager created (dry run)
+clusterrole.rbac.authorization.k8s.io/gitlab-fleet-manager-role created (dry run)
+clusterrolebinding.rbac.authorization.k8s.io/gitlab-fleet-manager-rolebinding created (dry run)
+serviceaccount/gitlab-fleet-controller-manager created (dry run)
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following are the steps to build the installer and distribute this project to users.
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/gitlab-fleet-webhook-operator:tag
-```
-
-NOTE: The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without
-its dependencies.
-
-2. Using the installer
-
-Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/gitlab-fleet-webhook-operator/<tag or branch>/dist/install.yaml
-```
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+Contributions to the project are welcome, however this is currently more of a proof of concept
 
 ## License
 
@@ -121,4 +74,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
