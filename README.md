@@ -40,20 +40,24 @@ The controller will then automatically create an environment and deployments wit
 docker build . -t gitlab-fleet-webhook-operator:local
 ```
 
-**NOTE:** This image ought to be published by Github Actions to the ghcr.io container registryAnd it is required to have access to pull the image from the working environment.
+or get the latest iamge published by a Github Action from ghcr.io 
+
+```sh
+ghcr.io/localleon/gitlab-fleet-notifications:main 
+```
 
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
-```sh
-$ kubectl apply -f ./config/manager --dry-run=client
-role.rbac.authorization.k8s.io/gitlab-fleet-leader-election-role created (dry run)
-rolebinding.rbac.authorization.k8s.io/gitlab-fleet-leader-election-rolebinding created (dry run)
-deployment.apps/gitlab-fleet-controller-manager created (dry run)
-clusterrole.rbac.authorization.k8s.io/gitlab-fleet-manager-role created (dry run)
-clusterrolebinding.rbac.authorization.k8s.io/gitlab-fleet-manager-rolebinding created (dry run)
-serviceaccount/gitlab-fleet-controller-manager created (dry run)
+```sh 
+kubectl create ns gitlab-fleet-operator
+# Create secret with Gitlab-Token for Authentication
+export GITLAB_TOKEN="YOUR_GITLAB_TOKEN_WITH_WRITE_API"
+kubectl create secret -n gitlab-fleet-operator generic gitlab-token --from-literal GITLAB_TOKEN=$GITLAB_TOKEN
+# Deploy the operator 
+kubectl apply -n gitlab-fleet-operator -f gitlab-fleet-webhook-operator/config/manager/
 ```
 
+You can edit the deployments to your liking if you want to deploy to a different namespace or use a different Gitlab-URL. 
 
 ## Contributing
 

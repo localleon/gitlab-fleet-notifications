@@ -8,8 +8,8 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: leader-election-role
+  name: gitlab-fleet-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: controller-manager
-  namespace: system
+  name: gitlab-fleet-controller-manager
+  namespace: gitlab-fleet-operator

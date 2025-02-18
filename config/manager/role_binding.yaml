@@ -12,3 +12,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: gitlab-fleet-controller-manager
+  namespace: gitlab-fleet-operator
