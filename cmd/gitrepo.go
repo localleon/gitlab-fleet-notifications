@@ -22,7 +22,10 @@ func (r *GitRepoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&fleetapi.GitRepo{}).
 		Owns(&fleetapi.GitRepo{}). // Ensures it watches updates
-		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		WithEventFilter(predicate.Or(
+			predicate.GenerationChangedPredicate{},
+			predicate.ResourceVersionChangedPredicate{},
+		)).
 		Complete(r)
 }
 
@@ -95,10 +98,10 @@ func reconcileGitRepoDeployment(projectID int, environmentName string, gitRepo *
 
 func reconcileEnvironmentStatus(projectID int, environmentID int, gitRepo *fleetapi.GitRepo, ctx context.Context) {
 	staticDescriptionPrefix := "This environment is currently beeing controlled by Rancher Fleet and Gitlab messages are propagated via a custom Kubernetes controller. Please visit the Rancher Fleet Page of your Cluster deployment for more informatin. Here's the information from Fleet: \n\n"
+	descriptionMessage := ""
 	// We always handle the latest status update and check if there's a message available
 	objCondition := getLatestWranglerObjectCondition(gitRepo.Status.Conditions)
 	if objCondition != nil {
-		descriptionMessage := ""
 		// Construct description string from current messages
 		if objCondition.Message != "" {
 			descriptionMessage = staticDescriptionPrefix + "Status: " + string(objCondition.Type) + ", with message: " + objCondition.Message
@@ -107,6 +110,15 @@ func reconcileEnvironmentStatus(projectID int, environmentID int, gitRepo *fleet
 			descriptionMessage = staticDescriptionPrefix + "Environment is currently reconciled. Cluster-state is in sync with Repository"
 		}
 		// Propagate information to Gitlab
+		gitlabClient.Environments.EditEnvironment(projectID, environmentID, &gitlab.EditEnvironmentOptions{
+			Description: &descriptionMessage,
+		})
+	}
+
+	// If the bundle has reconciled, e.g. all deployed resources are ready we overwrite the latest status update
+	if gitRepo.Status.ResourceCounts.DesiredReady == gitRepo.Status.ResourceCounts.Ready {
+		descriptionMessage = staticDescriptionPrefix + "All deployed resources are ready"
+		// Set environment status to ready
 		gitlabClient.Environments.EditEnvironment(projectID, environmentID, &gitlab.EditEnvironmentOptions{
 			Description: &descriptionMessage,
 		})
