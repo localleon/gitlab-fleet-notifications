@@ -2,7 +2,7 @@ module github.com/localleon/gitlab-fleet-webhook-operator
 
 go 1.23.0
 
-toolchain go1.24.0
+toolchain go1.24.1
 
 require (
 	github.com/rancher/fleet/pkg/apis v0.11.3
@@ -10,7 +10,7 @@ require (
 	gitlab.com/gitlab-org/api/client-go v0.124.0
 	k8s.io/apimachinery v0.32.2
 	k8s.io/client-go v0.32.2
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (
